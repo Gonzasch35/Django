@@ -1,7 +1,7 @@
 from typing import Any
 from django.forms.models import BaseModelForm
 from django.http import HttpResponse
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.views.generic.list import ListView
 from django.views.generic.detail import DetailView
 from django.views.generic.edit import CreateView, UpdateView,DeleteView,FormView
@@ -31,6 +31,11 @@ class PaginaRegistro(FormView):
         if usuario is not None:
             login(self.request, usuario)
         return super(PaginaRegistro, self).form_valid(form)
+    
+    def get(self, *args, **kwards):
+        if self.redirect_authenticated_user:
+            return redirect('tareas')
+        return super(PaginaRegistro, self).get(*args, **kwards)
 
 class ListaPendientes(LoginRequiredMixin, ListView):
     model = Tarea
@@ -40,6 +45,10 @@ class ListaPendientes(LoginRequiredMixin, ListView):
         context = super().get_context_data(**kwargs)
         context['tareas'] = context['tareas'].filter(usuario=self.request.user)
         context['count'] = context['tareas'].filter(completo=False).count()
+
+        valor_buscado = self.request.GET.get('area-buscar') or ''  
+        if valor_buscado:
+            context['tareas'] = context['tareas'].filter(titulo__icontans=valor_buscado)
         return context
 
 class DetalleTarea(LoginRequiredMixin, DetailView):
